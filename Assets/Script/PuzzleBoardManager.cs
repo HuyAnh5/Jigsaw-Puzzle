@@ -4,11 +4,14 @@ using System.Collections.Generic;
 public class PuzzleBoardManager : MonoBehaviour
 {
     [Header("Input")]
-    public Texture2D sourceTexture;
+    public Texture2D[] levelTextures;
+
+    [HideInInspector] public Texture2D sourceTexture;
     public int rows = 3;
     public int cols = 3;
     public GameObject piecePrefab;
     public float pixelsPerUnit = 100f;
+
 
     [Header("Board Layout")]
     public Vector2 boardCenter = Vector2.zero;  // vị trí giữa khung
@@ -30,9 +33,36 @@ public class PuzzleBoardManager : MonoBehaviour
     private static readonly Vector2Int GridLeft = new Vector2Int(0, -1); // col - 1
     private static readonly Vector2Int GridRight = new Vector2Int(0, 1);  // col + 1
 
+    [Header("Level")]
+    public int levelIndex = 1;                 // số màn hiện tại
+
+    [Header("UI")]
+    public GameObject levelCompletePanel;
+
+    private bool _alreadyCompleted = false;
+
     private void Start()
     {
-        // Đưa tâm board đúng giữa camera
+
+        levelIndex = CurrentLevel.Get();
+
+        if (levelTextures == null || levelTextures.Length == 0)
+        {
+            Debug.LogError("PuzzleBoardManager: levelTextures is empty!");
+            return;
+        }
+
+        int texIndex = Mathf.Clamp(levelIndex - 1, 0, levelTextures.Length - 1);
+        Texture2D tex = levelTextures[texIndex];
+
+        if (tex == null)
+        {
+            Debug.LogError($"PuzzleBoardManager: Missing texture for level {levelIndex} (element {texIndex})");
+            return;
+        }
+
+        sourceTexture = tex; 
+
         if (autoCenterOnCamera)
         {
             var cam = Camera.main;
@@ -61,6 +91,23 @@ public class PuzzleBoardManager : MonoBehaviour
 
         cam.orthographicSize = Mathf.Max(neededSizeByHeight, neededSizeByWidth) + 0.2f;
     }
+
+    private bool IsBoardCompleted()
+    {
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                PuzzlePiece piece = _piecesBySlot[r, c];
+                if (piece == null) return false;
+
+                if (piece.CurrentCoord != piece.OriginalCoord)
+                    return false;
+            }
+        }
+        return true;
+    }
+
 
     private void InitBoard()
     {
@@ -519,11 +566,31 @@ public class PuzzleBoardManager : MonoBehaviour
             p.transform.position = GetCellCenter(coord);
         }
 
-        // 8) CỰC QUAN TRỌNG: cập nhật lại border + bo góc theo vị trí mới
+        // 8) Cập nhật border
         UpdateAllBorders();
+
+        // 9) Kiểm tra hoàn thành
+        if (IsBoardCompleted())
+        {
+            OnBoardCompleted();
+        }
 
         return true;
     }
+
+    private void OnBoardCompleted()
+    {
+        if (_alreadyCompleted) return;
+        _alreadyCompleted = true;
+
+        // Lưu tiến trình (mở khoá level)
+        LevelProgress.SaveLevelCompleted(levelIndex);
+
+        // Hiện UI chúc mừng
+        if (levelCompletePanel != null)
+            levelCompletePanel.SetActive(true);
+    }
+
 
 
     #endregion
