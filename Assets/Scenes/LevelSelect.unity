@@ -234,7 +234,7 @@ MonoBehaviour:
   pixelsPerUnit: 100
   boardCenter: {x: 0, y: 0}
   spacing: 0
-  resetProgressOnStart: 0
+  resetProgressOnStart: 1
 --- !u!4 &1278044645
 Transform:
   m_ObjectHideFlags: 0
