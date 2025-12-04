@@ -227,7 +227,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75de37494cb4db049ac6abde3ac08b2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldTexture: {fileID: 2800000, guid: 35a1a29b5524ad54eba1029a9e9af6ff, type: 3}
+  worldTexture: {fileID: 2800000, guid: 38f99898c0066c745a8cdf202888883f, type: 3}
   rows: 5
   cols: 5
   levelTilePrefab: {fileID: 3291329916374412098, guid: 48383a804d9dd0e4bbede09f4f57c606, type: 3}

@@ -6,7 +6,7 @@ public static class LevelProgress
 
     public static int GetMaxLevelCleared()
     {
-        return PlayerPrefs.GetInt(MaxLevelKey, 0);
+        return PlayerPrefs.GetInt(MaxLevelKey);
     }
 
     public static void SaveLevelCompleted(int levelIndex)
