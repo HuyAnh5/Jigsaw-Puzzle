@@ -11,7 +11,6 @@ public static class CurrentLevel
 
     public static int Get()
     {
-        // Mặc định level 1 nếu chưa lưu gì
-        return PlayerPrefs.GetInt(CurrentLevelKey, 1);
+        return PlayerPrefs.GetInt(CurrentLevelKey, 0);
     }
 }

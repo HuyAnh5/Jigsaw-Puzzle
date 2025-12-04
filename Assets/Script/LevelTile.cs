@@ -5,7 +5,7 @@ public class LevelTile : MonoBehaviour
 {
     public SpriteRenderer imageRenderer;
     public Sprite hiddenSprite;
-    public TextMeshProUGUI numberText;
+    public TextMeshPro numberText;
 
     private int _levelIndex;
     private bool _isRevealed;
