@@ -83,9 +83,15 @@ public class LevelSelectBoardManager : MonoBehaviour
                 GameObject go = Instantiate(levelTilePrefab, pos, Quaternion.identity, transform);
                 var tile = go.GetComponent<LevelTile>();
 
-                bool isRevealed = levelIndex <= maxCleared;   // TRUE => lật ảnh, FALSE => che
+                bool isRevealed = levelIndex < maxCleared;
+                bool isJustCleared = levelIndex == maxCleared;
 
                 tile.Setup(levelIndex, isRevealed, sprite);
+
+                if (isJustCleared)
+                {
+                    tile.RevealWithFlip();
+                }
 
                 levelIndex++;
             }

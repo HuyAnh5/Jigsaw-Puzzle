@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using DG.Tweening;
 
 public class PuzzleBoardManager : MonoBehaviour
 {
@@ -39,11 +40,24 @@ public class PuzzleBoardManager : MonoBehaviour
     [Header("UI")]
     public GameObject levelCompletePanel;
 
+    [Header("Move Animation")]
+    public float moveDuration = 0.25f;
+    public Ease moveEase = Ease.OutQuad;
+
+    [Header("Dealing Animation")]
+    [Tooltip("Vị trí bộ bài ở góc màn hình (Deck)")]
+    public Transform deckOrigin;
+    public bool dealPiecesOnStart = true;
+    public float dealDuration = 0.3f;
+    public float dealInterval = 0.05f;
+    public Ease dealEase = Ease.OutQuad;
+
+    private readonly List<PuzzlePiece> _allPieces = new List<PuzzlePiece>();
+
     private bool _alreadyCompleted = false;
 
     private void Start()
     {
-
         levelIndex = CurrentLevel.Get();
 
         if (levelTextures == null || levelTextures.Length == 0)
@@ -61,7 +75,7 @@ public class PuzzleBoardManager : MonoBehaviour
             return;
         }
 
-        sourceTexture = tex; 
+        sourceTexture = tex;
 
         if (autoCenterOnCamera)
         {
@@ -118,6 +132,7 @@ public class PuzzleBoardManager : MonoBehaviour
         }
 
         _piecesBySlot = new PuzzlePiece[rows, cols];
+        _allPieces.Clear();
 
         int piecePixelWidth = sourceTexture.width / cols;
         int piecePixelHeight = sourceTexture.height / rows;
@@ -125,13 +140,11 @@ public class PuzzleBoardManager : MonoBehaviour
         float pieceWorldWidth = piecePixelWidth / pixelsPerUnit;
         float pieceWorldHeight = piecePixelHeight / pixelsPerUnit;
 
-        // boardSize = kích thước ảnh
         boardSize = new Vector2(pieceWorldWidth * cols, pieceWorldHeight * rows);
 
         _cellWidth = pieceWorldWidth;
         _cellHeight = pieceWorldHeight;
 
-        // top-left của board (tâm đã là boardCenter)
         Vector2 topLeft = boardCenter + new Vector2(
             -boardSize.x / 2f + _cellWidth / 2f,
              boardSize.y / 2f - _cellHeight / 2f
@@ -191,15 +204,28 @@ public class PuzzleBoardManager : MonoBehaviour
                     0f
                 );
 
+                // tạm đặt đúng chỗ, nhưng sẽ được xử lý lại sau khi xáo + phát bài
                 go.transform.position = cellCenter;
 
                 piece.Init(this, coord, coord);
                 _piecesBySlot[r, c] = piece;
+                _allPieces.Add(piece);
             }
         }
 
+        // Xáo vị trí logic của mảnh trên grid
         ShufflePieces();
-        RepositionAllPiecesToCells();
+
+        // Nếu có deckOrigin và bật flag -> phát bài từ góc
+        if (dealPiecesOnStart && deckOrigin != null)
+        {
+            DealPiecesFromDeck();
+        }
+        else
+        {
+            // Không dùng animation phát bài -> đặt thẳng vào cell
+            RepositionAllPiecesToCells();
+        }
     }
 
     #region Board helpers
@@ -376,7 +402,7 @@ public class PuzzleBoardManager : MonoBehaviour
 
     #endregion
 
-    #region Shuffle & cluster
+    #region Shuffle, deal & cluster
 
     private void ShufflePieces()
     {
@@ -421,6 +447,45 @@ public class PuzzleBoardManager : MonoBehaviour
                 {
                     p.transform.position = GetCellCenter(new Vector2Int(r, c));
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Phát toàn bộ mảnh từ deckOrigin vào đúng cell (đã được ShufflePieces)
+    /// </summary>
+    private void DealPiecesFromDeck()
+    {
+        if (deckOrigin == null)
+        {
+            Debug.LogWarning("PuzzleBoardManager: deckOrigin is null, fallback to direct reposition.");
+            RepositionAllPiecesToCells();
+            return;
+        }
+
+        // Đưa tất cả mảnh về vị trí bộ bài
+        foreach (var p in _allPieces)
+        {
+            if (p != null)
+            {
+                p.transform.position = deckOrigin.position;
+            }
+        }
+
+        Sequence seq = DOTween.Sequence();
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                PuzzlePiece piece = _piecesBySlot[r, c];
+                if (piece == null) continue;
+                Vector3 targetPos = GetCellCenter(new Vector2Int(r, c));
+                seq.Append(
+                    piece.transform.DOMove(targetPos, dealDuration)
+                         .SetEase(dealEase)
+                );
+                seq.AppendInterval(dealInterval);
             }
         }
     }
@@ -486,97 +551,168 @@ public class PuzzleBoardManager : MonoBehaviour
     Vector2Int targetAnchorCoord)
     {
         if (cluster == null || cluster.Count == 0) return false;
-        if (!startCoords.ContainsKey(anchorPiece)) return false;
+        if (anchorPiece == null || !startCoords.ContainsKey(anchorPiece)) return false;
 
-        Vector2Int startAnchor = startCoords[anchorPiece];
-        Vector2Int delta = targetAnchorCoord - startAnchor;
-
+        // Cụm hiện tại
         var clusterSet = new HashSet<PuzzlePiece>(cluster);
         var targetCoords = new Dictionary<PuzzlePiece, Vector2Int>();
 
-        // 1) Tính toạ độ đích cho từng piece
+        // Delta di chuyển dựa trên mảnh anchor
+        Vector2Int startAnchor = startCoords[anchorPiece];
+        Vector2Int delta = targetAnchorCoord - startAnchor;
+
+        // 1) Tính toạ độ đích cho từng piece trong cụm + check biên
         foreach (var p in cluster)
         {
-            Vector2Int from = startCoords[p];
+            if (!startCoords.TryGetValue(p, out var from))
+            {
+                Debug.LogWarning($"[MoveCluster] missing startCoord for {p.name}");
+                return false;
+            }
+
             Vector2Int to = from + delta;
 
             if (to.x < 0 || to.x >= rows || to.y < 0 || to.y >= cols)
+            {
+                Debug.LogWarning($"[MoveCluster] out of bounds: {p.name} from={from} to={to}");
                 return false;
+            }
 
             targetCoords[p] = to;
         }
 
-        // 2) Copy bảng slot
-        var newSlots = new PuzzlePiece[rows, cols];
-        for (int r = 0; r < rows; r++)
+        // 2) Gom các mảnh bị chiếm chỗ (occupant) ở các ô đích T
+        var displacedPieces = new List<PuzzlePiece>();
+
+        foreach (var kv in targetCoords)
         {
-            for (int c = 0; c < cols; c++)
-                newSlots[r, c] = _piecesBySlot[r, c];
-        }
-
-        // 3) Clear slot cũ của cluster
-        foreach (var p in cluster)
-        {
-            Vector2Int from = startCoords[p];
-            if (newSlots[from.x, from.y] == p)
-                newSlots[from.x, from.y] = null;
-        }
-
-        // 4) Xử lý swap với các mảnh ngoài cluster nếu cần
-        var swappedPieces = new Dictionary<PuzzlePiece, Vector2Int>();
-
-        foreach (var p in cluster)
-        {
-            Vector2Int from = startCoords[p];
-            Vector2Int to = targetCoords[p];
-
-            PuzzlePiece occupant = newSlots[to.x, to.y];
+            Vector2Int to = kv.Value;
+            PuzzlePiece occupant = _piecesBySlot[to.x, to.y];
 
             if (occupant != null && !clusterSet.Contains(occupant))
             {
-                if (newSlots[from.x, from.y] != null)
+                if (!displacedPieces.Contains(occupant))
                 {
-                    return false;
+                    displacedPieces.Add(occupant);
                 }
-
-                newSlots[from.x, from.y] = occupant;
-                swappedPieces[occupant] = from;
             }
-
-            newSlots[to.x, to.y] = p;
         }
 
-        // 5) Ghi lại slot chính thức
-        _piecesBySlot = newSlots;
+        // 3) Tính các ô "rỗng" mà cụm để lại: F = S \ T
+        var freedSet = new HashSet<Vector2Int>();
 
-        // 6) Cập nhật CurrentCoord + position cho cluster
         foreach (var p in cluster)
         {
-            Vector2Int coord = targetCoords[p];
-            p.SetCurrentCoord(coord);
-            p.transform.position = GetCellCenter(coord);
+            freedSet.Add(startCoords[p]);
         }
 
-        // 7) Cập nhật CurrentCoord + position cho các mảnh bị swap
-        foreach (var kv in swappedPieces)
+        foreach (var kv in targetCoords)
         {
-            var p = kv.Key;
-            var coord = kv.Value;
-            p.SetCurrentCoord(coord);
-            p.transform.position = GetCellCenter(coord);
+            // Mảnh cụm sẽ chiếm lại ô này, nên không còn trống cho occupant
+            freedSet.Remove(kv.Value);
         }
 
-        // 8) Cập nhật border
-        UpdateAllBorders();
-
-        // 9) Kiểm tra hoàn thành
-        if (IsBoardCompleted())
+        if (displacedPieces.Count > freedSet.Count)
         {
-            OnBoardCompleted();
+            Debug.LogWarning($"[MoveCluster] not enough freed cells: displaced={displacedPieces.Count}, freed={freedSet.Count}");
+            return false;
         }
+
+        var freedList = new List<Vector2Int>(freedSet);
+
+        // 4) Xây map piece -> newCoord cho cả cụm và các occupant
+        var newCoords = new Dictionary<PuzzlePiece, Vector2Int>();
+
+        // Cụm: luôn đi tới targetCoords
+        foreach (var kv in targetCoords)
+        {
+            newCoords[kv.Key] = kv.Value;
+        }
+
+        // Occupant: phân vào các ô rỗng còn lại của cụm
+        for (int i = 0; i < displacedPieces.Count; i++)
+        {
+            newCoords[displacedPieces[i]] = freedList[i];
+        }
+
+        // 5) Đảm bảo không có 2 piece muốn tới cùng 1 ô
+        var usedCells = new HashSet<Vector2Int>();
+        foreach (var kv in newCoords)
+        {
+            if (!usedCells.Add(kv.Value))
+            {
+                Debug.LogWarning($"[MoveCluster] destination conflict at {kv.Value}");
+                return false;
+            }
+        }
+
+        // 6) Clone bảng slot
+        var newSlots = (PuzzlePiece[,])_piecesBySlot.Clone();
+
+        // 7) Clear vị trí cũ của mọi piece có trong newCoords (cụm + occupant)
+        foreach (var kv in newCoords)
+        {
+            PuzzlePiece piece = kv.Key;
+            Vector2Int oldCoord;
+
+            if (clusterSet.Contains(piece))
+                oldCoord = startCoords[piece];
+            else
+                oldCoord = piece.CurrentCoord;
+
+            if (oldCoord.x >= 0 && oldCoord.x < rows &&
+                oldCoord.y >= 0 && oldCoord.y < cols &&
+                newSlots[oldCoord.x, oldCoord.y] == piece)
+            {
+                newSlots[oldCoord.x, oldCoord.y] = null;
+            }
+        }
+
+        // 8) Đặt mảnh vào vị trí mới + animate
+        Sequence seq = DOTween.Sequence();
+
+        foreach (var kv in newCoords)
+        {
+            PuzzlePiece piece = kv.Key;
+            Vector2Int coord = kv.Value;
+
+            newSlots[coord.x, coord.y] = piece;
+            piece.SetCurrentCoord(coord);
+
+            Vector3 targetPos = GetCellCenter(coord);
+
+            seq.Join(
+                piece.transform.DOMove(targetPos, moveDuration)
+                     .SetEase(moveEase)
+            );
+        }
+
+        // 9) Ghi lại bảng slot chính thức
+        _piecesBySlot = newSlots;
+
+        // 10) Khi tween xong: update viền + check hoàn thành + HẠ SORTING CỤM
+        seq.OnComplete(() =>
+        {
+            UpdateAllBorders();
+
+            if (IsBoardCompleted())
+            {
+                OnBoardCompleted();
+            }
+
+            // Cụm vừa kéo trở lại layer bình thường
+            foreach (var p in cluster)
+            {
+                if (p == null) continue;
+                var sr2 = p.GetComponent<SpriteRenderer>();
+                if (sr2 != null) sr2.sortingOrder -= 1000;
+            }
+        });
 
         return true;
+
     }
+
 
     private void OnBoardCompleted()
     {
@@ -590,8 +726,6 @@ public class PuzzleBoardManager : MonoBehaviour
         if (levelCompletePanel != null)
             levelCompletePanel.SetActive(true);
     }
-
-
 
     #endregion
 }

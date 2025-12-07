@@ -15,11 +15,15 @@ public class PuzzlePiece : MonoBehaviour
     public GameObject borderRight;
 
     [Header("Border Settings")]
-    public float borderThickness = 0.05f;   // độ dày viền theo world units
+    public float borderThickness = 0.05f;   // (giữ lại để không lỗi, hiện tại viền vẽ bằng shader)
 
     [Header("Rounded Shader")]
     [SerializeField] private float baseCornerRadius = 0.22f; // 0..0.5 theo UV
     [SerializeField] private float edgeSmooth = 0.02f;
+
+    [Header("Outline Settings (Shader)")]
+    [SerializeField] private Color outlineColor = Color.black;
+    [SerializeField, Range(0f, 0.2f)] private float outlineWidth = 0.02f;
 
     private Material _roundedMat;
     private static readonly int RadiusTL_ID = Shader.PropertyToID("_RadiusTL");
@@ -29,8 +33,11 @@ public class PuzzlePiece : MonoBehaviour
     private static readonly int Smooth_ID = Shader.PropertyToID("_Smooth");
     private static readonly int UVMin_ID = Shader.PropertyToID("_UVMin");
     private static readonly int UVMax_ID = Shader.PropertyToID("_UVMax");
+    private static readonly int OutlineColor_ID = Shader.PropertyToID("_OutlineColor");
+    private static readonly int OutlineWidth_ID = Shader.PropertyToID("_OutlineWidth");
+    private static readonly int BorderMask_ID = Shader.PropertyToID("_BorderMask");
 
-
+    private Vector4 _borderMask = new Vector4(1f, 1f, 1f, 1f);
 
     private PuzzleBoardManager _board;
     private Camera _cam;
@@ -126,11 +133,9 @@ public class PuzzlePiece : MonoBehaviour
             _roundedMat.SetVector(UVMax_ID, new Vector4(maxX, maxY, 0f, 0f));
         }
 
-        // ❷ MẶC ĐỊNH BO 4 GÓC
+        // ❷ Mặc định bo 4 góc (sau đó UpdateCornerRadii sẽ chỉnh lại theo hàng xóm)
         SetCornerRadii(baseCornerRadius, baseCornerRadius, baseCornerRadius, baseCornerRadius);
     }
-
-
 
     private void SetCornerRadii(float tl, float tr, float bl, float br)
     {
@@ -142,11 +147,20 @@ public class PuzzlePiece : MonoBehaviour
         _roundedMat.SetFloat(RadiusBR_ID, br);
     }
 
+    private void SetBorderMask(float left, float right, float top, float bottom)
+    {
+        if (_roundedMat == null) return;
+
+        _borderMask = new Vector4(left, right, top, bottom);
+        _roundedMat.SetVector(BorderMask_ID, _borderMask);
+    }
+
     /// <summary>
-    /// Cập nhật bán kính bo theo hàng xóm (true = có hàng xóm đúng ở hướng đó)
+    /// Cập nhật bán kính bo + trạng thái viền theo hàng xóm (true = có hàng xóm đúng ở hướng đó)
     /// </summary>
     public void UpdateCornerRadii(bool hasUp, bool hasDown, bool hasLeft, bool hasRight)
     {
+        // 1) Bo góc: có hàng xóm ở cạnh nào thì hai góc liên quan trở thành vuông (radius = 0)
         float tl = baseCornerRadius;
         float tr = baseCornerRadius;
         float bl = baseCornerRadius;
@@ -158,8 +172,15 @@ public class PuzzlePiece : MonoBehaviour
         if (hasDown) { bl = 0f; br = 0f; }
 
         SetCornerRadii(tl, tr, bl, br);
-    }
 
+        // 2) Viền: nếu có hàng xóm đúng ở cạnh nào thì cạnh đó không vẽ outline
+        float leftBorder = hasLeft ? 0f : 1f;
+        float rightBorder = hasRight ? 0f : 1f;
+        float topBorder = hasUp ? 0f : 1f;
+        float bottomBorder = hasDown ? 0f : 1f;
+
+        SetBorderMask(leftBorder, rightBorder, topBorder, bottomBorder);
+    }
 
     private void Awake()
     {
@@ -200,16 +221,30 @@ public class PuzzlePiece : MonoBehaviour
 
     public void EnableAllBorders()
     {
-        if (borderTop) borderTop.SetActive(true);
-        if (borderBottom) borderBottom.SetActive(true);
-        if (borderLeft) borderLeft.SetActive(true);
-        if (borderRight) borderRight.SetActive(true);
+        // Viền bây giờ vẽ bằng shader, không còn dùng GameObject con.
+        // Hàm này giữ lại để BoardManager có thể gọi như cũ.
+        SetBorderMask(1f, 1f, 1f, 1f);
     }
 
-    public void DisableBorderTop() { if (borderTop) borderTop.SetActive(false); }
-    public void DisableBorderBottom() { if (borderBottom) borderBottom.SetActive(false); }
-    public void DisableBorderLeft() { if (borderLeft) borderLeft.SetActive(false); }
-    public void DisableBorderRight() { if (borderRight) borderRight.SetActive(false); }
+    public void DisableBorderTop()
+    {
+        SetBorderMask(_borderMask.x, _borderMask.y, 0f, _borderMask.w);
+    }
+
+    public void DisableBorderBottom()
+    {
+        SetBorderMask(_borderMask.x, _borderMask.y, _borderMask.z, 0f);
+    }
+
+    public void DisableBorderLeft()
+    {
+        SetBorderMask(0f, _borderMask.y, _borderMask.z, _borderMask.w);
+    }
+
+    public void DisableBorderRight()
+    {
+        SetBorderMask(_borderMask.x, 0f, _borderMask.z, _borderMask.w);
+    }
 
     #endregion
 
@@ -217,11 +252,18 @@ public class PuzzlePiece : MonoBehaviour
 
     private void OnMouseDown()
     {
+        
+
         if (_cam == null) _cam = Camera.main;
         if (_board == null) _board = FindAnyObjectByType<PuzzleBoardManager>();
 
         Debug.Log($"[PuzzlePiece:{name}] OnMouseDown. Cam={_cam != null}, Board={_board != null}, Mouse={Input.mousePosition}");
-
+        
+        if (PuzzelSceneUIManager.IsSettingsOpen)
+        {
+            return;
+        }
+        
         if (_cam == null || _board == null)
         {
             Debug.LogWarning($"[PuzzlePiece:{name}] OnMouseDown but missing Camera or Board.");
@@ -260,10 +302,12 @@ public class PuzzlePiece : MonoBehaviour
             var sr2 = p.GetComponent<SpriteRenderer>();
             if (sr2 != null)
             {
-                sr2.sortingOrder += 1000;
+                sr2.sortingOrder = 1000;
             }
         }
     }
+
+
 
     private void OnMouseDrag()
     {
@@ -287,15 +331,8 @@ public class PuzzlePiece : MonoBehaviour
         if (!_isDragging) return;
         _isDragging = false;
 
-        // Trả sorting về bình thường
-        foreach (var p in _dragCluster)
-        {
-            var sr2 = p.GetComponent<SpriteRenderer>();
-            if (sr2 != null)
-            {
-                sr2.sortingOrder -= 1000;
-            }
-        }
+        // copy để chắc chắn hạ đúng cụm kể cả khi _dragCluster bị clear
+        var clusterCopy = new List<PuzzlePiece>(_dragCluster);
 
         if (_cam == null || _board == null)
         {
@@ -305,6 +342,15 @@ public class PuzzlePiece : MonoBehaviour
                 kv.Key.transform.position = kv.Value;
                 kv.Key.SetCurrentCoord(_dragStartCoords[kv.Key]);
             }
+
+            // Hạ sorting luôn
+            foreach (var p in clusterCopy)
+            {
+                if (p == null) continue;
+                var sr2 = p.GetComponent<SpriteRenderer>();
+                if (sr2 != null) sr2.sortingOrder = 0;
+            }
+
             _dragCluster.Clear();
             _dragStartCoords.Clear();
             _dragStartWorldPos.Clear();
@@ -322,16 +368,27 @@ public class PuzzlePiece : MonoBehaviour
 
             if (!moved)
             {
+                // Move fail -> trả về vị trí cũ + hạ sorting
                 foreach (var kv in _dragStartWorldPos)
                 {
                     kv.Key.transform.position = kv.Value;
                     kv.Key.SetCurrentCoord(_dragStartCoords[kv.Key]);
                 }
                 _board.UpdateAllBorders();
+
+                foreach (var p in clusterCopy)
+                {
+                    if (p == null) continue;
+                    var sr2 = p.GetComponent<SpriteRenderer>();
+                    if (sr2 != null) sr2.sortingOrder = 0;
+                }
             }
+            // moved == true -> KHÔNG hạ sorting ở đây.
+            // MoveCluster sẽ tự hạ sau khi tween xong.
         }
         else
         {
+            // Thả ngoài board -> trả về vị trí cũ + hạ sorting
             Debug.Log($"[PuzzlePiece:{name}] OnMouseUp outside board. Snap cluster back.");
             foreach (var kv in _dragStartWorldPos)
             {
@@ -339,12 +396,32 @@ public class PuzzlePiece : MonoBehaviour
                 kv.Key.SetCurrentCoord(_dragStartCoords[kv.Key]);
             }
             _board.UpdateAllBorders();
+
+            foreach (var p in clusterCopy)
+            {
+                if (p == null) continue;
+                var sr2 = p.GetComponent<SpriteRenderer>();
+                if (sr2 != null) sr2.sortingOrder = 0;
+            }
         }
+
+        // ĐẢM BẢO: sau khi thả chuột, cụm luôn về layer 0
+        foreach (var p in clusterCopy)
+        {
+            if (p == null) continue;
+            var sr2 = p.GetComponent<SpriteRenderer>();
+            if (sr2 != null)
+            {
+                sr2.sortingOrder = 0;
+            }
+        }
+
 
         _dragCluster.Clear();
         _dragStartCoords.Clear();
         _dragStartWorldPos.Clear();
     }
+
 
     #endregion
 
