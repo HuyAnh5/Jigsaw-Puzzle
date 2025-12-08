@@ -4,15 +4,11 @@ using DG.Tweening;
 
 public class PuzzleBoardManager : MonoBehaviour
 {
-    [Header("Input")]
-    public Texture2D[] levelTextures;
-
     [HideInInspector] public Texture2D sourceTexture;
     public int rows = 3;
     public int cols = 3;
     public GameObject piecePrefab;
     public float pixelsPerUnit = 100f;
-
 
     [Header("Board Layout")]
     public Vector2 boardCenter = Vector2.zero;  // vị trí giữa khung
@@ -52,6 +48,8 @@ public class PuzzleBoardManager : MonoBehaviour
     public float dealInterval = 0.05f;
     public Ease dealEase = Ease.OutQuad;
 
+    public static readonly HashSet<int> HardLevels = new HashSet<int> { 5, 10, 15, 20, 25 };
+
     private readonly List<PuzzlePiece> _allPieces = new List<PuzzlePiece>();
 
     private bool _alreadyCompleted = false;
@@ -60,18 +58,25 @@ public class PuzzleBoardManager : MonoBehaviour
     {
         levelIndex = CurrentLevel.Get();
 
-        if (levelTextures == null || levelTextures.Length == 0)
+        // Grid logic
+        if (HardLevels.Contains(levelIndex))
         {
-            Debug.LogError("PuzzleBoardManager: levelTextures is empty!");
-            return;
+            rows = 4;
+            cols = 4;
+        }
+        else
+        {
+            rows = 3;
+            cols = 3;
         }
 
-        int texIndex = Mathf.Clamp(levelIndex - 1, 0, levelTextures.Length - 1);
-        Texture2D tex = levelTextures[texIndex];
+        // Load texture bằng Resources sử dụng FORMAT
+        string path = string.Format(GameConstant.LEVEL_PATH_FORMAT, levelIndex);
+        Texture2D tex = Resources.Load<Texture2D>(path);
 
         if (tex == null)
         {
-            Debug.LogError($"PuzzleBoardManager: Missing texture for level {levelIndex} (element {texIndex})");
+            Debug.LogError($"Missing texture at Resources/{path}");
             return;
         }
 
@@ -89,6 +94,9 @@ public class PuzzleBoardManager : MonoBehaviour
         InitBoard();
         AutoFitCamera();
     }
+
+
+
 
     private void AutoFitCamera()
     {

@@ -30,5 +30,9 @@ public class LevelSelectPlayButton : MonoBehaviour
         SceneManager.LoadScene(puzzleSceneName);
     }
 
+    public void OnClickresetProgress()
+    {
+        LevelProgress.ResetProgress();
+    }
 
 }
