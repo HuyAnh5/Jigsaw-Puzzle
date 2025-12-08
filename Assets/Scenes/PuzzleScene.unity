@@ -866,7 +866,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -874,6 +873,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -1237,15 +1237,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 639ea089d9a1dbc4c996727db5787500, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelTextures:
-  - {fileID: 2800000, guid: 38f99898c0066c745a8cdf202888883f, type: 3}
-  - {fileID: 2800000, guid: f03e9c9d85dabf441a8fd93d52c8acc6, type: 3}
-  - {fileID: 2800000, guid: aa3d626a96ce61e489c3899053752831, type: 3}
-  - {fileID: 2800000, guid: 35a1a29b5524ad54eba1029a9e9af6ff, type: 3}
-  - {fileID: 2800000, guid: bbf88b8ee3c17ec4382daafbe96b7843, type: 3}
   sourceTexture: {fileID: 2800000, guid: 38f99898c0066c745a8cdf202888883f, type: 3}
-  rows: 3
-  cols: 3
+  rows: 4
+  cols: 4
   piecePrefab: {fileID: 5593984321139024295, guid: 69156953f8c5f4f40a8eb7bf5d153a50, type: 3}
   pixelsPerUnit: 100
   boardCenter: {x: 0, y: 0}
@@ -1356,6 +1350,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1646,6 +1641,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1782,6 +1778,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1918,6 +1915,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2054,6 +2052,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
