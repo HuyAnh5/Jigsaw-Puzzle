@@ -18,6 +18,7 @@ public class LevelSelectBoardManager : MonoBehaviour
 
     private void Start()
     {
+        SoundManager.PlayMusic(SoundType.musicBG);
         if (resetProgressOnStart)
         {
             LevelProgress.ResetProgress();

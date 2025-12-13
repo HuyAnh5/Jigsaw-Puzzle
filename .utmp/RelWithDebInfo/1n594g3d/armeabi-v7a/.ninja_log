@@ -1,0 +1,23 @@
+# ninja log v5
+136	661	7868856645117128	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	418d346b55bfd1b7
+664	1406	7868856651116539	C:/Users/huyan/Desktop/UnityGameProject/Jigsaw-Puzzle/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n594g3d/obj/armeabi-v7a/libswappywrapper.so	d137296837110e48
+44	3580	7868856674089064	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	9837917719a6d422
+14	3657	7868856675139467	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	fae4e1c841a7cfb7
+102	3891	7868856677371913	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	94e92e1f0fc14a53
+75	3922	7868856677690885	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	17509422df17a550
+2	3965	7868856678047801	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	354fa9ab94bb0684
+87	4311	7868856681686781	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	90c724643b265d60
+58	4546	7868856684069472	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	a549c4af2a2de709
+29	4864	7868856687169523	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6319ed73643a653
+4864	5068	7868856689399884	C:/Users/huyan/Desktop/UnityGameProject/Jigsaw-Puzzle/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n594g3d/obj/armeabi-v7a/libgame.so	7672ea046d600d19
+145	2077	7868877758100338	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	418d346b55bfd1b7
+2080	3857	7868877775131823	C:/Users/huyan/Desktop/UnityGameProject/Jigsaw-Puzzle/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n594g3d/obj/armeabi-v7a/libswappywrapper.so	d137296837110e48
+67	7064	7868877808205242	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	fae4e1c841a7cfb7
+132	7202	7868877809583078	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	94e92e1f0fc14a53
+55	7255	7868877810168538	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	354fa9ab94bb0684
+104	7350	7868877811052341	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	17509422df17a550
+91	7475	7868877812380316	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	9837917719a6d422
+79	7626	7868877813863641	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	a549c4af2a2de709
+119	7762	7868877815113363	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	90c724643b265d60
+18	9435	7868877831304136	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6319ed73643a653
+9442	9763	7868877835218287	C:/Users/huyan/Desktop/UnityGameProject/Jigsaw-Puzzle/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n594g3d/obj/armeabi-v7a/libgame.so	7672ea046d600d19

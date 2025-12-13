@@ -252,8 +252,8 @@ public class PuzzlePiece : MonoBehaviour
 
     private void OnMouseDown()
     {
-        
 
+        SoundManager.PlaySFX(SoundType.pickCard);
         if (_cam == null) _cam = Camera.main;
         if (_board == null) _board = FindAnyObjectByType<PuzzleBoardManager>();
 
@@ -331,7 +331,6 @@ public class PuzzlePiece : MonoBehaviour
         if (!_isDragging) return;
         _isDragging = false;
 
-        // copy để chắc chắn hạ đúng cụm kể cả khi _dragCluster bị clear
         var clusterCopy = new List<PuzzlePiece>(_dragCluster);
 
         if (_cam == null || _board == null)
@@ -343,7 +342,6 @@ public class PuzzlePiece : MonoBehaviour
                 kv.Key.SetCurrentCoord(_dragStartCoords[kv.Key]);
             }
 
-            // Hạ sorting luôn
             foreach (var p in clusterCopy)
             {
                 if (p == null) continue;

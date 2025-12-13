@@ -292,6 +292,8 @@ public class PuzzleBoardManager : MonoBehaviour
 
     public void SwapPieces(PuzzlePiece movingPiece, Vector2Int targetCoord)
     {
+        SoundManager.PlaySFX(SoundType.moveCard);
+
         Vector2Int from = movingPiece.CurrentCoord;
         PuzzlePiece other = GetPieceAtCell(targetCoord);
 
